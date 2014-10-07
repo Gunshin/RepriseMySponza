@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0ac1667a-e9b6-431d-aca0-6e95f20f3fc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader Files">
+      <UniqueIdentifier>{f7a2d133-2daf-4d11-a597-355cf1f4c39e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{61856a5b-3a54-45de-a597-99e3d9a759db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{14a12e64-c008-4fb7-852b-858dfd71101d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\tgl">
+      <UniqueIdentifier>{2cec168c-4b79-41de-a224-6c8ffc925ac3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\tygra">
+      <UniqueIdentifier>{d70f8ac0-38e0-481c-a903-05325af80e98}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\src\tgl\tgl.c">
+      <Filter>External\tgl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\src\tygra\Window.cpp">
+      <Filter>External\tygra</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\src\tygra\FileHelper.cpp">
+      <Filter>External\tygra</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\demo\reprise_vs.glsl">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="..\demo\reprise_fs.glsl">
+      <Filter>Shader Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MyView.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FirstPersonMovement.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyController.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyScene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

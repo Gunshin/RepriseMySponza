@@ -1,0 +1,14 @@
+*
+
+!.gitignore
+
+!demo
+!demo/*
+demo/sponza_with_friends_2x.tcf
+
+!RepriseMySponza
+!RepriseMySponza/*
+
+!README.md
+
+!RepriseMySponza.sln
