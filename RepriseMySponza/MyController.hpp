@@ -54,9 +54,13 @@ private:
                                       int button_index,
                                       bool down) override;
 
+    void
+    updateCameraTranslation();
+
 	std::shared_ptr<MyView> view_;
     std::shared_ptr<MyScene> scene_;
 
     bool camera_turn_mode_;
-    bool camera_move_key_[4];
+    float camera_move_speed_[4];
+    float camera_rotate_speed_[2];
 };

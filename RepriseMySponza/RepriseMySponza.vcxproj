@@ -63,14 +63,14 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>tcf-vc120-mt-sg.lib;opengl32.lib;glfw.lib;libpng.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcf-vc120-mt-sg.lib;opengl32.lib;glfw.lib;libpng.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(SolutionDir)demo\$(TargetFileName)"
-copy "..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)\*.dll" "$(SolutionDir)demo"</Command>
+rem copy "..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)\*.dll" "$(SolutionDir)demo"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -92,14 +92,14 @@ copy "..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)\*.
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>tcf-vc120-mt-s.lib;opengl32.lib;glfw.lib;libpng.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcf-vc120-mt-s.lib;opengl32.lib;glfw.lib;libpng.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(SolutionDir)demo\$(TargetFileName)"
-copy "..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)\*.dll" "$(SolutionDir)demo"</Command>
+rem copy "..\external\lib\$(Platform)\v$(PlatformToolsetVersion)\$(Configuration)\*.dll" "$(SolutionDir)demo"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
