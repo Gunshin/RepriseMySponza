@@ -1,21 +1,32 @@
-#version 330 core
+#version 430 core
 
 struct Light
 {
     vec3 position;
+    float range;
     vec3 direction;
     float half_cone_angle_degrees;
-    float range;
 };
 
-vec3 calculateColour(Light light_, vec3 V_);
+struct Material
+{
+    vec3 colour;
+    float shininess;
+};
+
+vec3 calculateColour(Light light_, Material mat_, vec3 V_);
 
 uniform vec3 camPosition;
 
-uniform vec3 materialColour[7];
-uniform float shininess[7];
+layout(std430) buffer BufferMaterials
+{
+    Material materials[];
+};
 
-uniform Light lights[5];
+layout(std430) buffer BufferLights
+{
+    Light lights[];
+};
 
 in vec3 vs_pos;
 in vec3 vs_normal;
@@ -26,18 +37,18 @@ out vec4 fragment_colour;
 void main(void)
 {
 
-	vec3 V = normalize(camPosition-vs_pos);
+	vec3 V = normalize(camPosition - vs_pos);
 
 	vec3 col = vec3(0,0,0);
-	for(int i = 0; i < 5; ++i)
+	for(int i = 0; i < lights.length; ++i)
 	{
-		col += calculateColour(lights[i], V);
+		col += calculateColour(lights[i], materials[vs_matIndex], V);
 	}
 	
     fragment_colour = vec4(col, 1.0);
 }
 
-vec3 calculateColour(Light light_, vec3 V_)
+vec3 calculateColour(Light light_, Material mat_, vec3 V_)
 {
 	
 	vec3 L = normalize(light_.position - vs_pos);
@@ -58,12 +69,12 @@ vec3 calculateColour(Light light_, vec3 V_)
 		/*float attenuation = 1.0 / (2
 							   + 0.01 * distance
 							   + 0.0001 * distance * distance);*/
-		vec3 Id = materialColour[vs_matIndex] * max(dot(L, vs_normal), 0) * attenuatedLight;
+		vec3 Id = mat_.colour * max(dot(L, vs_normal), 0) * attenuatedLight;
 
 		vec3 Is = vec3(0, 0, 0);
-		if(dot(L, vs_normal) > 0 && shininess[vs_matIndex] > 0)
+		if(dot(L, vs_normal) > 0 && mat_.shininess > 0)
 		{
-			Is = vec3(1, 1, 1) * pow(max(0, dot(R, V_)), shininess[vs_matIndex]) * attenuatedLight;
+			Is = vec3(1, 1, 1) * pow(max(0, dot(R, V_)), mat_.shininess) * attenuatedLight;
 		}
 
 		return Id + Is;

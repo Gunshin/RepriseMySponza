@@ -39,6 +39,8 @@ private:
 
     std::shared_ptr<const MyScene> scene_;
 
+    float aspectRatio;
+
     struct Vertex
     {
         Vertex(){};
@@ -71,6 +73,7 @@ private:
         float shininess;
     };
     std::vector< MaterialData > materials;
+    GLuint bufferMaterials;
 
     struct InstanceData
     {
@@ -79,6 +82,17 @@ private:
     };
     std::vector< GLuint > instanceVBOs;
     std::vector< std::vector< InstanceData > > instanceData;
+
+    // cant get access to the MyScene::Light since we are only declaring MyScene as a class (no direct reference)
+    struct LightData
+    {
+        glm::vec3 position;
+        float range;
+        glm::vec3 direction;
+        float field_of_view_degrees;
+    };
+    std::vector<LightData> lights;
+    GLuint bufferLights;
 
     ShaderProgram shaderProgram;
 

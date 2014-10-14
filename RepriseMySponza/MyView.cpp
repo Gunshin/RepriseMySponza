@@ -3,7 +3,6 @@
 #include <tygra/FileHelper.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 #include <cassert>
 
 #include "Shader.hpp"
@@ -37,6 +36,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
     shaderProgram.addShaderToProgram(&vs);
     shaderProgram.addShaderToProgram(&fs);
     shaderProgram.linkProgram();
+
+    shaderProgram.useProgram();
     
     instanceData.resize(scene_->meshCount());
     instanceVBOs.resize(scene_->meshCount());
@@ -48,6 +49,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         instance.materialDataIndex = static_cast< GLint >(scene_->model(i).material_index);
         instanceData[scene_->model(i).mesh_index].push_back(instance);
     }
+
+    
 
     /******
     Since im not someone who likes to assume things, i have attempted to jump around the problem that each individual model
@@ -64,6 +67,38 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         data.shininess = scene_->material(i).shininess;
         materials.push_back(data);
     }
+
+    // setup material SSBO
+    glGenBuffers(1, &bufferMaterials);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferMaterials);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialData) * materials.size(), &materials[0], GL_STREAM_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bufferMaterials);
+    glShaderStorageBlockBinding(
+        shaderProgram.getProgramID(),
+        glGetUniformBlockIndex(shaderProgram.getProgramID(), "BufferMaterials"),
+        1);
+
+    //copy lights data
+    lights.resize(scene_->lightCount());
+    for (int i = 0; i < scene_->lightCount(); ++i)
+    {
+        //memcpy the data since someone decided to copy the wrong file, and then give us lights from a damn switch statement. crazy i tell ya
+        memcpy(&lights[i], &scene_->light(i), sizeof(LightData));
+    }
+
+    // set up light SSBO
+    glGenBuffers(1, &bufferLights);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferLights);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(LightData)* lights.size(), &lights[0], GL_STREAM_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bufferLights);
+    glShaderStorageBlockBinding(
+        shaderProgram.getProgramID(),
+        glGetUniformBlockIndex(shaderProgram.getProgramID(), "BufferLights"),
+        2);
 
     //load scene meshes
     std::vector<Vertex> vertices;
@@ -167,6 +202,11 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
     }
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    printf("Finished init\n");
+
 }
 
 void MyView::
@@ -175,6 +215,7 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
                    int height)
 {
     glViewport(0, 0, width, height);
+    aspectRatio = static_cast<float>(width) / height;
 }
 
 void MyView::
@@ -187,48 +228,37 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 {
     assert(scene_ != nullptr);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.f, 0.f, 0.25f, 0.f);
-    shaderProgram.useProgram();
-
-    float aspectRatio = 1920.f / 1080.f;
 
     glm::mat4 projectionMatrix = glm::perspective(75.f, aspectRatio, 1.f, 1000.f);
     glm::mat4 viewMatrix = glm::lookAt(scene_->camera().position, scene_->camera().direction + scene_->camera().position, glm::vec3(0, 1, 0));
     glm::mat4 projectionViewMatrix = projectionMatrix * viewMatrix;
 
+    //per frame
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram.getProgramID(), "projectionViewMat"), 1, GL_FALSE, glm::value_ptr(projectionViewMatrix));
-
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram.getProgramID(), "viewMat"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
     glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), "camPosition"), 1, glm::value_ptr(scene_->camera().position));
 
-    for (int i = 0; i < scene_->lightCount(); ++i)
-    {
-        std::string lightsPos("lights[" + std::to_string(i) + "].position");
-        glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsPos.c_str()), 1, glm::value_ptr(scene_->light(i).position));
+    //for (int i = 0; i < scene_->lightCount(); ++i)
+    //{
+    //    //per frame
+    //    std::string lightsPos("lights[" + std::to_string(i) + "].position");
+    //    glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsPos.c_str()), 1, glm::value_ptr(scene_->light(i).position));
 
-        std::string lightsDir("lights[" + std::to_string(i) + "].direction");
-        glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsDir.c_str()), 1, glm::value_ptr(scene_->light(i).direction));
+    //    //per frame
+    //    std::string lightsDir("lights[" + std::to_string(i) + "].direction");
+    //    glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsDir.c_str()), 1, glm::value_ptr(scene_->light(i).direction));
 
-        std::string lightsConeAng("lights[" + std::to_string(i) + "].half_cone_angle_degrees");
-        glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsConeAng.c_str()), scene_->light(i).field_of_view_degrees / 2.0f);
+    //    //init
+    //    std::string lightsConeAng("lights[" + std::to_string(i) + "].half_cone_angle_degrees");
+    //    glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsConeAng.c_str()), scene_->light(i).field_of_view_degrees / 2.0f);
 
-        std::string lightsRange("lights[" + std::to_string(i) + "].range");
-        glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsRange.c_str()), scene_->light(i).range);
-    }
+    //    //init
+    //    std::string lightsRange("lights[" + std::to_string(i) + "].range");
+    //    glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsRange.c_str()), scene_->light(i).range);
+    //}
 
-    for (unsigned int i = 0; i < materials.size(); ++i)
-    {
-        std::string matColourPath("materialColour[" + std::to_string(i) + "]");
-        glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), matColourPath.c_str()), 1, glm::value_ptr(materials[i].colour));
-
-        std::string shininessPath("shininess[" + std::to_string(i) + "]");
-        glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), shininessPath.c_str()), materials[i].shininess);
-    }
+    
 
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
