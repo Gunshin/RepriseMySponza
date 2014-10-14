@@ -7,12 +7,10 @@
 MyController::
 MyController() : camera_turn_mode_(false)
 {
-    camera_move_speed_[0] = 0;
-    camera_move_speed_[1] = 0;
-    camera_move_speed_[2] = 0;
-    camera_move_speed_[3] = 0;
-    camera_rotate_speed_[0] = 0;
-    camera_rotate_speed_[1] = 0;
+    camera_move_key_[0] = false;
+    camera_move_key_[1] = false;
+    camera_move_key_[2] = false;
+    camera_move_key_[3] = false;
     scene_ = std::make_shared<MyScene>();
 	view_ = std::make_shared<MyView>();
     view_->setScene(scene_);
@@ -89,23 +87,28 @@ windowControlKeyboardChanged(std::shared_ptr<tygra::Window> window,
     switch (key_index) {
     case tygra::kWindowKeyLeft:
     case 'A':
-        camera_move_speed_[0] = down ? 1.f : 0.f;
+        camera_move_key_[0] = down;
         break;
     case tygra::kWindowKeyRight:
     case 'D':
-        camera_move_speed_[1] = down ? 1.f : 0.f;
+        camera_move_key_[1] = down;
         break;
     case tygra::kWindowKeyUp:
     case 'W':
-        camera_move_speed_[2] = down ? 1.f : 0.f;
+        camera_move_key_[2] = down;
         break;
     case tygra::kWindowKeyDown:
     case 'S':
-        camera_move_speed_[3] = down ? 1.f : 0.f;
+        camera_move_key_[3] = down;
         break;
     }
 
-    updateCameraTranslation();
+    const float key_speed = 100.f;
+    const float sideward_speed = -key_speed * camera_move_key_[0]
+                                    + key_speed * camera_move_key_[1];
+    const float forward_speed = key_speed * camera_move_key_[2]
+                                - key_speed * camera_move_key_[3];
+    scene_->setCameraTranslationSpeed(sideward_speed, forward_speed);
 
     if (!down)
         return;
@@ -124,60 +127,6 @@ windowControlGamepadAxisMoved(std::shared_ptr<tygra::Window> window,
                               int axis_index,
                               float pos)
 {
-    const float deadzone = 0.2f;
-    const float rotate_speed = 3.f;
-    switch (axis_index) {
-    case tygra::kWindowGamepadAxisLeftThumbX:
-        if (pos < -deadzone) {
-            camera_move_speed_[0] = -pos;
-            camera_move_speed_[1] = 0.f;
-        }
-        else if (pos > deadzone) {
-            camera_move_speed_[0] = 0.f;
-            camera_move_speed_[1] = pos;
-        }
-        else {
-            camera_move_speed_[0] = 0.f;
-            camera_move_speed_[1] = 0.f;
-        }
-        break;
-    case tygra::kWindowGamepadAxisLeftThumbY:
-        if (pos < -deadzone) {
-            camera_move_speed_[3] = -pos;
-            camera_move_speed_[2] = 0.f;
-        }
-        else if (pos > deadzone) {
-            camera_move_speed_[3] = 0.f;
-            camera_move_speed_[2] = pos;
-        }
-        else {
-            camera_move_speed_[3] = 0.f;
-            camera_move_speed_[2] = 0.f;
-        }
-        break;
-    case tygra::kWindowGamepadAxisRightThumbX:
-        if (pos < -deadzone || pos > deadzone) {
-            camera_rotate_speed_[0] = -pos;
-        }
-        else {
-            camera_rotate_speed_[0] = 0.f;
-        }
-        scene_->setCameraRotationSpeed(camera_rotate_speed_[0] * rotate_speed,
-                                       camera_rotate_speed_[1] * rotate_speed);
-        break;
-    case tygra::kWindowGamepadAxisRightThumbY:
-        if (pos < -deadzone || pos > deadzone) {
-            camera_rotate_speed_[1] = pos;
-        }
-        else {
-            camera_rotate_speed_[1] = 0.f;
-        }
-        scene_->setCameraRotationSpeed(camera_rotate_speed_[0] * rotate_speed,
-                                       camera_rotate_speed_[1] * rotate_speed);
-        break;
-    }
-
-    updateCameraTranslation();
 }
 
 void MyController::
@@ -186,15 +135,4 @@ windowControlGamepadButtonChanged(std::shared_ptr<tygra::Window> window,
                                   int button_index,
                                   bool down)
 {
-}
-
-void MyController::
-updateCameraTranslation()
-{
-    const float key_speed = 100.f;
-    const float sideward_speed = -key_speed * camera_move_speed_[0]
-        + key_speed * camera_move_speed_[1];
-    const float forward_speed = key_speed * camera_move_speed_[2]
-        - key_speed * camera_move_speed_[3];
-    scene_->setCameraTranslationSpeed(sideward_speed, forward_speed);
 }

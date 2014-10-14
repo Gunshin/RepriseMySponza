@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <tgl/tgl.h>
+#include <tygra/FileHelper.hpp>
 #include "Shader.hpp"
 
 Shader::Shader() : loaded(0)
