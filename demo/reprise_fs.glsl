@@ -18,12 +18,12 @@ vec3 calculateColour(Light light_, Material mat_, vec3 V_);
 
 uniform vec3 camPosition;
 
-layout(std430) buffer BufferMaterials
+layout(std430, binding = 1) buffer BufferMaterials
 {
     Material materials[];
 };
 
-layout(std430) buffer BufferLights
+layout(std430, binding = 2) buffer BufferLights
 {
     Light lights[];
 };
@@ -40,7 +40,7 @@ void main(void)
 	vec3 V = normalize(camPosition - vs_pos);
 
 	vec3 col = vec3(0,0,0);
-	for(int i = 0; i < lights.length; ++i)
+	for(int i = 0; i < lights.length(); ++i)
 	{
 		col += calculateColour(lights[i], materials[vs_matIndex], V);
 	}
@@ -66,9 +66,6 @@ vec3 calculateColour(Light light_, Material mat_, vec3 V_)
 
         vec3 attenuatedLight = attenuatedDistance * attenuatedCone;
 
-		/*float attenuation = 1.0 / (2
-							   + 0.01 * distance
-							   + 0.0001 * distance * distance);*/
 		vec3 Id = mat_.colour * max(dot(L, vs_normal), 0) * attenuatedLight;
 
 		vec3 Is = vec3(0, 0, 0);

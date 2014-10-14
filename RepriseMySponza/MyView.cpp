@@ -81,12 +81,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         1);
 
     //copy lights data
-    lights.resize(scene_->lightCount());
-    for (int i = 0; i < scene_->lightCount(); ++i)
-    {
-        //memcpy the data since someone decided to copy the wrong file, and then give us lights from a damn switch statement. crazy i tell ya
-        memcpy(&lights[i], &scene_->light(i), sizeof(LightData));
-    }
+    UpdateLightData();
 
     // set up light SSBO
     glGenBuffers(1, &bufferLights);
@@ -145,9 +140,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
-        /*assert(i < instanceVBOs.size());
-        assert(i < loadedMeshes.size());*/
-
         glGenBuffers(1, &instanceVBOs[i]);
         glBindBuffer(GL_ARRAY_BUFFER, instanceVBOs[i]);
         glBufferData(GL_ARRAY_BUFFER,
@@ -205,8 +197,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    printf("Finished init\n");
-
 }
 
 void MyView::
@@ -239,25 +229,14 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram.getProgramID(), "projectionViewMat"), 1, GL_FALSE, glm::value_ptr(projectionViewMatrix));
     glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), "camPosition"), 1, glm::value_ptr(scene_->camera().position));
 
-    //for (int i = 0; i < scene_->lightCount(); ++i)
-    //{
-    //    //per frame
-    //    std::string lightsPos("lights[" + std::to_string(i) + "].position");
-    //    glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsPos.c_str()), 1, glm::value_ptr(scene_->light(i).position));
+    // make sure all light data is up to date.
+    UpdateLightData();
 
-    //    //per frame
-    //    std::string lightsDir("lights[" + std::to_string(i) + "].direction");
-    //    glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), lightsDir.c_str()), 1, glm::value_ptr(scene_->light(i).direction));
-
-    //    //init
-    //    std::string lightsConeAng("lights[" + std::to_string(i) + "].half_cone_angle_degrees");
-    //    glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsConeAng.c_str()), scene_->light(i).field_of_view_degrees / 2.0f);
-
-    //    //init
-    //    std::string lightsRange("lights[" + std::to_string(i) + "].range");
-    //    glUniform1f(glGetUniformLocation(shaderProgram.getProgramID(), lightsRange.c_str()), scene_->light(i).range);
-    //}
-
+    // update the light buffer
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferLights);
+    GLvoid* bufferPointer = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+    memcpy(bufferPointer, &lights[0], sizeof(LightData) * lights.size());
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     
 
     for (int i = 0; i < scene_->meshCount(); ++i)
@@ -269,5 +248,16 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
             TGL_BUFFER_OFFSET(loadedMeshes[i].startElementIndex * sizeof(int)),
             instanceData[i].size(),
             loadedMeshes[i].startVerticeIndex);
+    }
+    
+}
+
+void MyView::UpdateLightData()
+{
+    lights.resize(scene_->lightCount());
+    for (int i = 0; i < scene_->lightCount(); ++i)
+    {
+        //memcpy the data since someone decided to copy the wrong file, and then give us lights from a damn switch statement. crazy i tell ya
+        memcpy(&lights[i], &scene_->light(i), sizeof(LightData));
     }
 }

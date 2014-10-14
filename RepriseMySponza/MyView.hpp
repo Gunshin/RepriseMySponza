@@ -39,6 +39,8 @@ private:
 
     std::shared_ptr<const MyScene> scene_;
 
+    void UpdateLightData();
+
     float aspectRatio;
 
     struct Vertex
