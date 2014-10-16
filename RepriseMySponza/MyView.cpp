@@ -219,7 +219,6 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 {
     assert(scene_ != nullptr);
 
-    
     glClearColor(0.f, 0.f, 0.25f, 0.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -236,6 +235,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_BLEND);
     
+    SetBuffer(projectionViewMatrix, scene_->camera().position, lights[0]);
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
         glBindVertexArray(loadedMeshes[i].vao);
@@ -261,6 +261,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 
         for (int i = 0; i < scene_->meshCount(); ++i)
         {
+        //int i = 10;
             glBindVertexArray(loadedMeshes[i].vao);
             glDrawElementsInstancedBaseVertex(GL_TRIANGLES,
                 loadedMeshes[i].element_count,
