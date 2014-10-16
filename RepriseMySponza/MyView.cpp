@@ -74,26 +74,27 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialData) * materials.size(), &materials[0], GL_STREAM_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bufferMaterials);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bufferMaterials);
     glShaderStorageBlockBinding(
         shaderProgram.getProgramID(),
         glGetUniformBlockIndex(shaderProgram.getProgramID(), "BufferMaterials"),
-        1);
+        0);
 
     //copy lights data
     UpdateLightData();
 
     // set up light SSBO
-    glGenBuffers(1, &bufferLights);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferLights);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(LightData)* lights.size(), &lights[0], GL_STREAM_DRAW);
+    glGenBuffers(1, &bufferRender);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferRender);
+    unsigned int size = sizeof(glm::mat4) + sizeof(glm::vec3) + sizeof(LightData) + sizeof(float); // since our buffer only has a projection matrix, camposition and single light source
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bufferLights);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bufferRender);
     glShaderStorageBlockBinding(
         shaderProgram.getProgramID(),
-        glGetUniformBlockIndex(shaderProgram.getProgramID(), "BufferLights"),
-        2);
+        glGetUniformBlockIndex(shaderProgram.getProgramID(), "BufferRender"),
+        1);
 
     //load scene meshes
     std::vector<Vertex> vertices;
@@ -218,27 +219,23 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 {
     assert(scene_ != nullptr);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
     glClearColor(0.f, 0.f, 0.25f, 0.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 projectionMatrix = glm::perspective(75.f, aspectRatio, 1.f, 1000.f);
     glm::mat4 viewMatrix = glm::lookAt(scene_->camera().position, scene_->camera().direction + scene_->camera().position, glm::vec3(0, 1, 0));
     glm::mat4 projectionViewMatrix = projectionMatrix * viewMatrix;
 
-    //per frame
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram.getProgramID(), "projectionViewMat"), 1, GL_FALSE, glm::value_ptr(projectionViewMatrix));
-    glUniform3fv(glGetUniformLocation(shaderProgram.getProgramID(), "camPosition"), 1, glm::value_ptr(scene_->camera().position));
-
     // make sure all light data is up to date.
     UpdateLightData();
 
-    // update the light buffer
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferLights);
-    GLvoid* bufferPointer = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
-    memcpy(bufferPointer, &lights[0], sizeof(LightData) * lights.size());
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glDepthMask(GL_TRUE);
+    // draw depth buffer
+    glDepthFunc(GL_LEQUAL);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDisable(GL_BLEND);
     
-
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
         glBindVertexArray(loadedMeshes[i].vao);
@@ -249,7 +246,32 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
             instanceData[i].size(),
             loadedMeshes[i].startVerticeIndex);
     }
+
+    // draw colour
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_EQUAL);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_ONE, GL_ONE);
+
+    for (int lightIndex = 0; lightIndex < lights.size(); ++lightIndex)
+    {
+        SetBuffer(projectionViewMatrix, scene_->camera().position, lights[lightIndex]);
+
+        for (int i = 0; i < scene_->meshCount(); ++i)
+        {
+            glBindVertexArray(loadedMeshes[i].vao);
+            glDrawElementsInstancedBaseVertex(GL_TRIANGLES,
+                loadedMeshes[i].element_count,
+                GL_UNSIGNED_INT,
+                TGL_BUFFER_OFFSET(loadedMeshes[i].startElementIndex * sizeof(int)),
+                instanceData[i].size(),
+                loadedMeshes[i].startVerticeIndex);
+        }
+    }
     
+    glDepthMask(GL_TRUE);
 }
 
 void MyView::UpdateLightData()
@@ -260,4 +282,32 @@ void MyView::UpdateLightData()
         //memcpy the data since someone decided to copy the wrong file, and then give us lights from a damn switch statement. crazy i tell ya
         memcpy(&lights[i], &scene_->light(i), sizeof(LightData));
     }
+}
+
+void MyView::SetBuffer(glm::mat4 projectMat_, glm::vec3 camPos_, LightData light_)
+{
+    // so since glMapBufferRange does not work, i am going to create a temporary buffer for the per model data, and then copy the full buffer straight into the shaders buffer
+    unsigned int bufferSize = sizeof(projectMat_)+sizeof(camPos_)+sizeof(float)/*padding0*/ +sizeof(LightData);
+    char* buffer = new char[bufferSize];
+    unsigned int index = 0;
+
+    //projection matrix first!
+    memcpy(buffer + index, glm::value_ptr(projectMat_), sizeof(glm::mat4));
+    index += sizeof(projectMat_);
+
+    // camera position next!
+    memcpy(buffer + index, glm::value_ptr(camPos_), sizeof(camPos_));
+    index += sizeof(camPos_)+sizeof(float);//padding
+
+    // finally the LIGHTS!
+    memcpy(buffer + index, &light_, sizeof(LightData));
+
+    // update the render buffer, so get the pointer!
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferRender);
+    GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+    memcpy(p, buffer, bufferSize);
+    //done
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    delete[] buffer;
 }

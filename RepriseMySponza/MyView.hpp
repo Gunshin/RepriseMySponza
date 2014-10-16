@@ -39,7 +39,7 @@ private:
 
     std::shared_ptr<const MyScene> scene_;
 
-    void UpdateLightData();
+    
 
     float aspectRatio;
 
@@ -94,8 +94,11 @@ private:
         float field_of_view_degrees;
     };
     std::vector<LightData> lights;
-    GLuint bufferLights;
+    GLuint bufferRender;
 
     ShaderProgram shaderProgram;
+
+    void UpdateLightData();
+    void SetBuffer(glm::mat4 projectMat_, glm::vec3 camPos_, LightData light_);
 
 };

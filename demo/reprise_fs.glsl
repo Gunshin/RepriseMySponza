@@ -16,16 +16,18 @@ struct Material
 
 vec3 calculateColour(Light light_, Material mat_, vec3 V_);
 
-uniform vec3 camPosition;
-
-layout(std430, binding = 1) buffer BufferMaterials
+// bound and buffered on program start. only ever updated on program start (eg. never updates)
+layout(std140, binding = 0) buffer BufferMaterials
 {
     Material materials[];
 };
 
-layout(std430, binding = 2) buffer BufferLights
+// updated every frame (or render call)
+layout(std140, binding = 1) buffer BufferRender
 {
-    Light lights[];
+    mat4 projectionViewMat;
+    vec3 camPosition;
+    Light light;
 };
 
 in vec3 vs_pos;
@@ -40,11 +42,8 @@ void main(void)
 	vec3 V = normalize(camPosition - vs_pos);
 
 	vec3 col = vec3(0,0,0);
-	for(int i = 0; i < lights.length(); ++i)
-	{
-		col += calculateColour(lights[i], materials[vs_matIndex], V);
-	}
-	
+    col += calculateColour(light, materials[vs_matIndex], V);
+
     fragment_colour = vec4(col, 1.0);
 }
 

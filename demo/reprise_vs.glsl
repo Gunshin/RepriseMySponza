@@ -1,6 +1,19 @@
 #version 430
 
-uniform mat4 projectionViewMat;
+struct Light
+{
+    vec3 position;
+    float range;
+    vec3 direction;
+    float half_cone_angle_degrees;
+};
+
+layout(std140, binding = 1) buffer BufferRender
+{
+    mat4 projectionViewMat;
+    vec3 camPosition;
+    Light light;
+};
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
