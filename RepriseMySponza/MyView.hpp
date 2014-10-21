@@ -46,9 +46,8 @@ private:
     struct Vertex
     {
         Vertex(){};
-        Vertex(glm::vec3 pos_, glm::vec3 norm_/*, glm::vec2 tex_*/) : position(pos_), normal(norm_)/*, texCoord(tex_)*/ {}
+        Vertex(glm::vec3 pos_, glm::vec3 norm_) : position(pos_), normal(norm_) {}
         glm::vec3 position, normal;
-        //glm::vec2 texCoord;
     };
 
     GLuint vertexVBO; // VertexBufferObject for the vertex positions
@@ -57,6 +56,7 @@ private:
     struct Mesh
     {
         GLuint vao;// VertexArrayObject for the shape's vertex array settings
+        GLuint instanceVBO;
         int startVerticeIndex, endVerticeIndex, verticeCount;
         int startElementIndex, endElementIndex, element_count; // Needed for when we draw using the vertex arrays
 
@@ -82,7 +82,6 @@ private:
         glm::mat4x3 positionData;
         GLint materialDataIndex;
     };
-    std::vector< GLuint > instanceVBOs;
     std::vector< std::vector< InstanceData > > instanceData;
 
     // cant get access to the MyScene::Light since we are only declaring MyScene as a class (no direct reference)

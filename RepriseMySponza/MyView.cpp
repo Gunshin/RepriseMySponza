@@ -40,7 +40,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
     shaderProgram.useProgram();
     
     instanceData.resize(scene_->meshCount());
-    instanceVBOs.resize(scene_->meshCount());
 
     for (int i = 0; i < scene_->modelCount(); ++i)
     {
@@ -107,8 +106,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         for (unsigned int j = 0; j < scene_->mesh(i).position_array.size(); ++j)
         {
             vertices.push_back(Vertex(scene_->mesh(i).position_array[j],
-                scene_->mesh(i).normal_array[j]/*,
-                scene_->mesh(i).texcoord_array[j]*/));
+                scene_->mesh(i).normal_array[j]));
         }
         for (unsigned int j = 0; j < scene_->mesh(i).element_array.size(); ++j)
         {
@@ -141,8 +139,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
-        glGenBuffers(1, &instanceVBOs[i]);
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBOs[i]);
+        glGenBuffers(1, &loadedMeshes[i].instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, loadedMeshes[i].instanceVBO);
         glBufferData(GL_ARRAY_BUFFER,
             instanceData[i].size() * sizeof(InstanceData),
             instanceData[i].data(),
@@ -166,13 +164,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
             sizeof(Vertex), TGL_BUFFER_OFFSET(offset));
         offset += sizeof(glm::vec3);
 
-        /*glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
-            sizeof(Vertex), TGL_BUFFER_OFFSET(offset));
-        offset += sizeof(glm::vec2);*/
-
         unsigned int instanceOffset = 0;
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBOs[i]);
+        glBindBuffer(GL_ARRAY_BUFFER, loadedMeshes[i].instanceVBO);
 
         for (int a = 2; a < 6; ++a)
         {
