@@ -211,9 +211,9 @@ void MyView::
 windowViewRender(std::shared_ptr<tygra::Window> window)
 {
     assert(scene_ != nullptr);
-
-    glClearColor(0.f, 0.f, 0.25f, 0.f);
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0.f, 0.f, 0.25f, 0.f);
 
     glm::mat4 projectionMatrix = glm::perspective(75.f, aspectRatio, 1.f, 1000.f);
     glm::mat4 viewMatrix = glm::lookAt(scene_->camera().position, scene_->camera().direction + scene_->camera().position, glm::vec3(0, 1, 0));
@@ -222,8 +222,8 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     // make sure all light data is up to date.
     UpdateLightData();
 
+	// draw depth buffer
     glDepthMask(GL_TRUE);
-    // draw depth buffer
     glDepthFunc(GL_LEQUAL);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_BLEND);
@@ -250,11 +250,10 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 
     for (int lightIndex = 0; lightIndex < lights.size(); ++lightIndex)
     {
-        SetBuffer(projectionViewMatrix, scene_->camera().position, lights[lightIndex]);
+		SetBuffer(projectionViewMatrix, scene_->camera().position, lights[lightIndex]);
 
         for (int i = 0; i < scene_->meshCount(); ++i)
         {
-        //int i = 10;
             glBindVertexArray(loadedMeshes[i].vao);
             glDrawElementsInstancedBaseVertex(GL_TRIANGLES,
                 loadedMeshes[i].element_count,
