@@ -49,8 +49,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         instanceData[scene_->model(i).mesh_index].push_back(instance);
     }
 
-    
-
     /******
     Since im not someone who likes to assume things, i have attempted to jump around the problem that each individual model
     (even those with the same meshes) could potentially have different materials as is specified in the model data. I have
@@ -246,9 +244,25 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_ONE, GL_ONE);
+    glBlendFunc(GL_ONE, GL_ZERO);
 
-    for (int lightIndex = 0; lightIndex < lights.size(); ++lightIndex)
+    //draw the first light so we can overwrite the blue tint in the framebuffer before we add the rest of the lights to it.
+    SetBuffer(projectionViewMatrix, scene_->camera().position, lights[0]);
+    for (int i = 0; i < scene_->meshCount(); ++i)
+    {
+        glBindVertexArray(loadedMeshes[i].vao);
+        glDrawElementsInstancedBaseVertex(GL_TRIANGLES,
+            loadedMeshes[i].element_count,
+            GL_UNSIGNED_INT,
+            TGL_BUFFER_OFFSET(loadedMeshes[i].startElementIndex * sizeof(int)),
+            instanceData[i].size(),
+            loadedMeshes[i].startVerticeIndex);
+    }
+
+    //set gl to add the fragment shaders results to the framebuffer
+    glBlendFunc(GL_ONE, GL_ONE);
+    // start from the second light source as the first is used to overwrite the blue tinted framebuffer
+    for (int lightIndex = 1; lightIndex < lights.size(); ++lightIndex)
     {
 		SetBuffer(projectionViewMatrix, scene_->camera().position, lights[lightIndex]);
 
