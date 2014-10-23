@@ -1,4 +1,4 @@
-#include "MyView.hpp"
+ #include "MyView.hpp"
 #include "MyScene.hpp"
 #include <tygra/FileHelper.hpp>
 #include <glm/gtc/matrix_transform.hpp>
