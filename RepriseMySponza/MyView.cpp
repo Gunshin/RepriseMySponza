@@ -152,6 +152,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementVBO);
         glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
 
+		// add mesh input channels
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
             sizeof(Vertex), TGL_BUFFER_OFFSET(offset));
@@ -162,6 +163,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
             sizeof(Vertex), TGL_BUFFER_OFFSET(offset));
         offset += sizeof(glm::vec3);
 
+		// add instance input channels
         unsigned int instanceOffset = 0;
         glBindBuffer(GL_ARRAY_BUFFER, loadedMeshes[i].instanceVBO);
 
@@ -242,11 +244,8 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_EQUAL);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glEnable(GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_ONE, GL_ZERO);
-
-    //draw the first light so we can overwrite the blue tint in the framebuffer before we add the rest of the lights to it.
+	// keep the blend disabled so we just overwrite the date in the framebuffer
+    // draw the first light so we can overwrite the blue tint in the framebuffer before we add the rest of the lights to it.
     SetBuffer(projectionViewMatrix, scene_->camera().position, lights[0]);
     for (int i = 0; i < scene_->meshCount(); ++i)
     {
@@ -260,6 +259,8 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     }
 
     //set gl to add the fragment shaders results to the framebuffer
+	glEnable(GL_BLEND);
+	glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_ONE, GL_ONE);
     // start from the second light source as the first is used to overwrite the blue tinted framebuffer
     for (int lightIndex = 1; lightIndex < lights.size(); ++lightIndex)
